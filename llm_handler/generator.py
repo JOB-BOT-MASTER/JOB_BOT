@@ -17,12 +17,13 @@ class LetterGenerator:
         except Exception:
             self.model_to_use = config.llm.model_name
 
+    
     def generate(self, cv_text: str, job_description: str, retries=3) -> str:
         """
         Génère une lettre de motivation structurée en LaTeX pur.
         """
         prompt = rf"""
-        Rédige une lettre de motivation professionnelle en utilisant la structure "Vous-Moi-Nous".
+        Rédige une lettre de motivation professionnelle en utilisant la structure "Vous-Moi-Nous".    
         Le format de sortie doit être du code LaTeX valide (\documentclass{{article}}).
 
         STRUCTURE DE RÉDACTION :
