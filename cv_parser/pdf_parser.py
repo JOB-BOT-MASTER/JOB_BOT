@@ -19,7 +19,7 @@ if not api_key:
 # 2. Configuration du NOUVEAU client Gemini
 client = genai.Client(api_key=api_key)
 
-def extraire_et_restructurer_cv(chemin_pdf):
+def extraire_texte_cv(chemin_pdf):
     """
     Extrait le texte d'un CV avec PyMuPDF.
     Basule sur l'OCR (Tesseract) si le PDF est une image.
@@ -53,7 +53,7 @@ def extraire_et_restructurer_cv(chemin_pdf):
         if len(texte_brut.strip()) < 50:
             return {
                 "statut": "erreur", 
-                "texte_propre": "",
+                "texte_CV": "",
                 "erreur": "Le document est illisible ou vide, même après tentative de lecture OCR."
             }
 
@@ -67,7 +67,7 @@ def extraire_et_restructurer_cv(chemin_pdf):
         - NE RÉSUME RIEN.
         - N'AJOUTE AUCUNE INFORMATION INVENTÉE.
         - Regroupe correctement les titres (ex: 'Informatique', 'Expériences') avec leurs contenus.
-        - Formate le résultat proprement.
+        - Formate le résultat propremen.
         
         Texte brut à traiter :
         {texte_brut}
@@ -82,14 +82,14 @@ def extraire_et_restructurer_cv(chemin_pdf):
         return {
             "statut": "succes",
             "texte_original": texte_brut,  # Gardé pour le débogage si besoin
-            "texte_propre": reponse.text,
+            "texte_CV": reponse.text,
             "erreur": None
         }
 
     except Exception as e:
         return {
             "statut": "erreur",
-            "texte_propre": "",
+            "texte_CV": "",
             "erreur": str(e)
         }
 
