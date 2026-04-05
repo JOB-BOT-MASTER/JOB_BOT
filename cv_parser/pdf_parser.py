@@ -67,7 +67,7 @@ def extraire_texte_cv(chemin_pdf):
         - NE RÉSUME RIEN.
         - N'AJOUTE AUCUNE INFORMATION INVENTÉE.
         - Regroupe correctement les titres (ex: 'Informatique', 'Expériences') avec leurs contenus.
-        - Formate le résultat propremen.
+        - Formate le résultat proprement.
         
         Texte brut à traiter :
         {texte_brut}
