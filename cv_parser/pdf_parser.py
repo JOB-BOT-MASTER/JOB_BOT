@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from google import genai 
 
 # Configuration OCR pour Windows 
-# N'oubliez pas d'installer le logiciel Tesseract-OCR sur le PC qui fait tourner ce code !
+# N'oubliez pas d'installer le logiciel Tesseract-OCR sur le PC qui fait tourner ce code (le PC qui heberge le bot) !
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 # 1. Chargement sécurisé de la clé API depuis le fichier .env
@@ -26,7 +26,7 @@ def extraire_texte_cv(chemin_pdf):
     Utilise ensuite Gemini pour réparer les problèmes de colonnes et de mise en page.
     """
     try:
-        # --- PHASE 1 : Extraction brute avec PyMuPDF et OCR ---
+        # PHASE 1 : Extraction brute avec PyMuPDF et OCR 
         document = fitz.open(chemin_pdf)
         texte_brut = ""
         
@@ -57,7 +57,7 @@ def extraire_texte_cv(chemin_pdf):
                 "erreur": "Le document est illisible ou vide, même après tentative de lecture OCR."
             }
 
-        # --- PHASE 2 : Restructuration intelligente avec Gemini ---
+        # PHASE 2 : Restructuration intelligente avec Gemini 
         prompt = f"""
         Voici le texte brut extrait d'un CV au format PDF. À cause des colonnes, 
         le texte et les rubriques sont parfois mélangés ou coupés au mauvais endroit.
@@ -93,12 +93,12 @@ def extraire_texte_cv(chemin_pdf):
             "erreur": str(e)
         }
 
-# --- Zone de test ---
+# Zone de test 
 if __name__ == "__main__":
     fichier_test = r"C:\Users\alpha\OneDrive\Desktop\Conduite de projet\C-V Alpha Oumar DIALLO.pdf"
     
     print("--- 1. Lancement de l'extraction (PyMuPDF/OCR) et connexion à Gemini... ---")
-    resultat = extraire_et_restructurer_cv(fichier_test)
+    resultat = extraire_texte_cv(fichier_test)
     
     if resultat["statut"] == "succes":
         print("\n EXTRACTION ET RESTRUCTURATION RÉUSSIES !\n")
