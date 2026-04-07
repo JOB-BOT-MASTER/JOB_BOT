@@ -1,157 +1,142 @@
-# Groupe 4 — CV Parser Pro
-**Membres :** Alpha Oumar DIALLO · Yaye Fatou GNINGUE · Antoine PACCHIONI · Rayhana BEN HIM
+Groupe 4 : Module d'Extraction de texte à partir d’un CV  
 
----
+Projet : JOB_BOT Bot Discord d'aide à la recherche d'emploi
+UE : Conduite de Projet-Master 1 DS2E-Université de Strasbourg
+Membres : Alpha Oumar DIALLO-Rayhana Ben HIM-Antoine PACCHIONI-Yaye Fatou GNINGUE
+________________________________________
+1. Objectif du module
+Le Groupe 4, nous sommes responsable de l'extraction textuelle des CV soumis par les utilisateurs au format PDF. Le module prend en entrée un fichier PDF (quel que soit son mode de création) et retourne en sortie un texte restructuré par rubriques, directement exploitable par le module d'analyse du Groupe 5.
+Le script produit une unique fonction importable, extraire_cv(chemin_pdf), conçue pour être appelée depuis le bot Discord du Groupe 1 sans dépendance au reste du code.
+________________________________________
+2. Problématique technique
+L'extraction de texte depuis un PDF est triviale sur des documents à mise en page linéaire (rapports, articles). Elle devient problématique sur des CV pour trois raisons identifiées lors de nos tests.
+Les colonnes multiples. La majorité des CV modernes utilisent deux colonnes (compétences à gauche, formations et expériences à droite). Un parser qui lit le PDF dans son ordre interne mélange les contenus des deux colonnes sur une même ligne, produisant un texte incohérent.
+Les CV sans calque texte. Les CV créés sur des plateformes graphiques (Canva, Photoshop) ou scannés depuis un document papier sont exportés en PDF sous forme d'image. Aucune donnée textuelle n'est accessible par extraction classique : le parser retourne une chaîne vide.
+La fragmentation des rubriques. Même avec un parser performant, les titres de section ("Formations", "Compétences") se retrouvent parfois séparés de leur contenu à cause du découpage en blocs textuels du PDF.
+________________________________________
+3. Choix techniques et justifications
+3.1 PyMuPDF (fitz) plutôt que PyPDF2
+Nous avons initialement testé PyPDF2, la bibliothèque la plus répandue pour la lecture de PDF en Python. Le résultat sur notre propre CV (format deux colonnes) était inutilisable : les rubriques "Langues" et "Compétences" (colonne gauche) se retrouvaient intercalées avec les "Formations" (colonne droite).
+Exemple de sortie PyPDF2 sur le CV d'Alpha Oumar DIALLO :
+Rédaction, Présentation, Master 1 Data Science pour l'Economie Reporting 
+Word Excel(TCD, Licence Economie, Statistique et Modélisation Fonctions, 
+Dashboard) De septembre 2022 à juin 2024 Powerpoint Université de Lille...
+Cause identifiée : PyPDF2 lit les objets texte dans l'ordre d'écriture interne du fichier PDF, qui ne correspond pas à l'ordre visuel de lecture. PyMuPDF, en revanche, utilise les coordonnées spatiales (x, y) de chaque bloc texte pour reconstituer l'ordre de lecture naturel. Il est par ailleurs significativement plus rapide, son moteur de rendu (MuPDF) étant écrit en C.
+3.2 Tesseract OCR comme mécanisme de fallback
+Pour gérer les CV exportés sous forme d'image, nous avons intégré un mécanisme de détection automatique suivi d'un traitement OCR.
+Critère de déclenchement : Si le texte extrait par PyMuPDF sur une page contient moins de 50 caractères, la page est considérée comme une image. Ce seuil a été choisi empiriquement : une page de CV standard contient entre 500 et 3000 caractères ; un seuil de 50 laisse une marge pour les éléments résiduels (numéros de page, pieds de page) tout en détectant les pages effectivement vides de texte.
+Processus de fallback :
+1.	La page est convertie en image bitmap à 300 DPI via PyMuPDF. La résolution de 300 DPI a été retenue car elle offre un taux de reconnaissance supérieur à 95% avec Tesseract, contre environ 80% à 150 DPI. Une résolution de 600 DPI n'apporte pas de gain significatif mais double le temps de traitement.
+2.	L'image est convertie au format PIL via la bibliothèque Pillow pour compatibilité avec Tesseract.
+3.	Tesseract effectue la reconnaissance optique avec les modèles de langue français et anglais (lang='fra+eng'), les CV contenant fréquemment des termes techniques anglais.
+Choix de Tesseract plutôt qu'une API cloud (Google Vision, AWS Textract) : Tesseract est gratuit, open source, et fonctionne hors ligne. Dans le cadre d'un projet académique sans budget, c'est le choix le plus pragmatique. L'inconvénient est qu'il nécessite une installation système sur chaque machine qui fais tourner le code.
+3.3 Gemini 2.5 Flash pour la restructuration
+Après l'extraction (PyMuPDF ou OCR), le texte obtenu est souvent fragmenté : les rubriques sont détachées de leur contenu, des informations de colonnes différentes se retrouvent adjacentes. Nous utilisons l'API Gemini pour remettre en ordre ces fragments.
+Point essentiel : le LLM ne fait pas d'analyse. Son rôle est strictement limité à la restructuration. Le prompt impose trois contraintes explicites : ne rien résumer, ne rien inventer, regrouper les titres avec leurs contenus. L'analyse sémantique (comparaison CV/offre, génération de lettre) est la responsabilité exclusive du Groupe 5.
+Choix du modèle Flash : Pour une tâche de reformatage (pas de raisonnement complexe), le modèle Flash offre un temps de réponse de 2 à 3 secondes contre 10 à 15 pour les modèles plus lourds, pour un résultat équivalent sur ce type de tâche.
+________________________________________
+4. Code source commenté (extraits clés)
+Le script complet est dans cv_parser.py. Nous détaillons ici les passages qui méritent des explications.
+4.1 Extraction et détection automatique
+python
+document = fitz.open(chemin_pdf) 
+texte_brut = ""
+for page_num, page in enumerate(document): 
+         texte_page = page.get_text("text")
+# Détection de page image : seuil empirique de 50 caractères 
+if len(texte_page.strip()) < 50: 
+    pixmap = page.get_pixmap(dpi=300) # Conversion en image HD 
+    image_pil = Image.frombytes( "RGB", [pixmap.width, pixmap.height], pixmap.samples)                 texte_page = pytesseract.image_to_string(image_pil, lang='fra+eng')
+texte_brut += texte_page + "\n"
 
-## 🎯 Objectif
-Ce module extrait le texte d'un CV au format PDF et le restructure proprement, puis le transmet au bot Discord sous forme de dictionnaire structuré, prêt à être exploité par les Groupes 1 et 5.
+La boucle traite chaque page indépendamment. Le test len(texte_page.strip()) < 50 agit comme un aiguillage : texte suffisant → on garde l'extraction PyMuPDF ; texte insuffisant → on bascule sur l'OCR. Ce mécanisme est transparent pour l'appelant.
+4.2 Prompt de restructuration
+Python
+prompt = f"""
+Voici le texte brut extrait d'un CV au format PDF. À cause des colonnes, 
+le texte et les rubriques sont parfois mélangés ou coupés au mauvais endroit.
 
----
+Ton rôle est de RESTRUCTURER ce texte de manière parfaitement logique et lisible.
+Règles absolues :
+- NE RÉSUME RIEN.
+- N'AJOUTE AUCUNE INFORMATION INVENTÉE.
+- Regroupe correctement les titres avec leurs contenus.
+- Formate le résultat proprement.
 
-## 📁 Fichier concerné
-```
-cv_parser.py
-```
+Texte brut à traiter :
+{texte_brut}
+"""
 
----
+Les contraintes du prompt ont été formulées après plusieurs itérations. Sans la règle "NE RÉSUME RIEN", Gemini condensait les listes de compétences. Sans "N'AJOUTE AUCUNE INFORMATION INVENTÉE", il complétait les niveaux de langue non spécifiés dans le CV.
+________________________________________
+5. Interface de sortie
+La fonction retourne systématiquement un dictionnaire à structure fixe, indépendamment du résultat.
 
-## ⚙️ Fonctionnement
-Le script traite chaque page du PDF en 3 phases automatiques :
 
-1. **Extraction PyMuPDF** — lecture du texte vectoriel page par page.
-2. **Fallback OCR** — si la page contient moins de 50 caractères, conversion en image HD (300 dpi) et lecture via Tesseract.
-3. **Restructuration Gemini** — le texte brut est envoyé à Gemini 2.5 Flash pour remettre les rubriques dans l'ordre (sans résumer ni inventer).
 
-| Paramètre | Valeur |
-|---|---|
-| Seuil détection image | < 50 caractères par page |
-| Résolution OCR | 300 dpi |
-| Langues OCR | `fra + eng` |
-| Modèle LLM | `gemini-2.5-flash` |
-
----
-
-## 📦 Format de sortie
-
-La fonction `extraire_et_restructurer_cv()` retourne toujours un dictionnaire Python :
-
-```python
-# Succès
+Cas nominal :
+python
 {
     "statut": "succes",
-    "texte_propre":   "John DOE\nDéveloppeur Python\n...",
     "texte_original": "texte brut avant restructuration",
+    "texte_propre": "texte restructuré par Gemini",
     "erreur": None
 }
 
-# Erreur
-{ "statut": "erreur", "texte_propre": "", "erreur": "Description de l'erreur." }
-```
+Cas d'erreur :
+Python
+{
+    "statut": "erreur",
+    "texte_propre": "",
+    "erreur": "Le document est illisible ou vide, même après tentative de lecture OCR."
+}
 
----
+Le champ texte_original est conservé à des fins de débogage (comparaison brut/propre). Le Groupe 5 consomme exclusivement texte_propre. Le Groupe 1 teste statut pour décider de la réponse Discord.
+Exemple de sortie réelle sur le CV d'Alpha Oumar DIALLO :
+Le CV original (format Canva, deux colonnes, PDF image) a été détecté en OCR à la page 1, puis restructuré par Gemini. Le champ texte_propre contenait l'intégralité des informations correctement regroupées : coordonnées, profil, formations (Master 1 DS2E, Licence Économie Lille, Licence UCAD Dakar), projets académiques, compétences techniques, langues et centres d'intérêt. Sans aucune perte ni invention.
+________________________________________
+6. Intégration avec les autres groupes
+Python
+# Dans bot.py (Groupe 1)
+from cv_parser import extraire_cv
 
-## 🔌 Intégration dans bot.py
+resultat = extraire_cv("temp_cv.pdf")
 
-### Pour le Groupe 5
-```python
-from cv_parser import extraire_et_restructurer_cv
-
-resultat = extraire_et_restructurer_cv("chemin/vers/cv.pdf")
 if resultat["statut"] == "succes":
-    texte_propre = resultat["texte_propre"]
-```
+    texte_pour_groupe5 = resultat["texte_propre"]
+else:
+    await ctx.send(f"Erreur : {resultat['erreur']}")
 
-### Pour le Groupe 1 (bot Discord)
-```python
-from cv_parser import extraire_et_restructurer_cv
+Le module ne gère pas la réception du fichier depuis Discord (responsabilité du Groupe 1) ni l'analyse du contenu (responsabilité du Groupe 5). Cette séparation permet à chaque groupe de modifier son code sans impacter les autres, à condition de respecter le format d'entrée/sortie défini ci-dessus.
+________________________________________
+7. Installation
+Logiciel système
+Tesseract OCR doit être installé sur la machine hôte :
+•	Windows : télécharger l'installeur depuis github.com/UB-Mannheim/tesseract/wiki
+•	Mac : brew install tesseract
+•	Linux : sudo apt-get install tesseract-ocr
+Dépendances Python
+Bash
+pip install PyMuPDF pytesseract Pillow python-dotenv google-genai
 
-@bot.event
-async def on_message(message):
-    if message.attachments:
-        for attachment in message.attachments:
-            if attachment.filename.endswith(".pdf"):
-                await attachment.save(f"temp_{attachment.filename}")
-                resultat = extraire_et_restructurer_cv(f"temp_{attachment.filename}")
-                if resultat["statut"] == "succes":
-                    await message.channel.send(resultat["texte_propre"])
-```
+Variable d'environnement
+Créer un fichier .env à la racine du projet (fichier présent dans .gitignore) :
+GEMINI_API_KEY=votre_cle_api
+________________________________________
+8. Limites identifiées
+Dépendance à Tesseract en local. L'installation système est une contrainte de déploiement. Le chemin est actuellement configuré pour Windows. Une solution portable nécessiterait soit une détection automatique de l'OS, soit le recours à une API OCR cloud.
+Dépendance à l'API Gemini. En cas d'indisponibilité de l'API (panne, quota dépassé, clé expirée), le Bouclier 3 est inopérant. Le texte brut est retourné sans restructuration, ce qui peut dégrader un peu la qualité de l'analyse du Groupe 5. Un fallback retournant le texte brut avec un avertissement serait une amélioration pertinente.
+Seuil de détection OCR fixe. Le seuil de 50 caractères fonctionne sur les cas testés, mais pourrait produire des faux positifs (CV minimaliste déclenchant l'OCR inutilement) ou des faux négatifs (PDF semi-image contenant juste assez de texte résiduel pour ne pas déclencher l'OCR).
+Traitement page par page indépendant. (pour des CV avec plus d’un page) Une rubrique à cheval sur deux pages pourrait être fragmentée lors de la restructuration.
+Absence de tests automatisés. Le module a été validé manuellement sur un échantillon restreint de CV. Un jeu de tests couvrant les cas types (une colonne, deux colonnes, scanné, Canva, multipage) renforcerait la fiabilité.
+________________________________________
+9. Structure des fichiers
 
-> ⚠️ Ne pas utiliser `texte_propre` sans vérifier d'abord que `resultat["statut"] == "succes"`.
 
----
+groupe4/ 
+├── cv_parser.py                                  # Script principal 
+├── .env                                                     # Clé API Gemini (non versionné) 
+├── README.md                                  # Cette documentation 
+└── requirements.txt                           # Dépendances Python
 
-## 🛠️ Installation
 
-### 1. Tesseract OCR (logiciel système)
-
-- **Windows :** Télécharger et installer depuis https://github.com/UB-Mannheim/tesseract/wiki
-- **Mac :** `brew install tesseract`
-- **Linux :** `sudo apt-get install tesseract-ocr tesseract-ocr-fra`
-
-> ⚠️ **Groupe 1 (serveur Linux) :** commenter la ligne du chemin Tesseract dans `cv_parser.py` — elle est inutile hors Windows.
-
-### 2. Dépendances Python
-
-Assurez-vous d'avoir activé l'environnement virtuel commun, puis :
-
-```bash
-pip install pymupdf pytesseract pillow python-dotenv google-genai
-```
-
-Pensez à mettre à jour `requirements.txt` et à prévenir les autres groupes sur Discord.
-
-### 3. Clé API
-
-Créer un fichier `.env` à la racine du projet :
-```
-GEMINI_API_KEY=votre_clé_api_google_ici
-```
-
-Obtenez une clé sur https://aistudio.google.com/app/apikey
-
-> ⚠️ Ne jamais pousser `.env` sur GitHub — l'ajouter au `.gitignore`.
-
----
-
-## ▶️ Test rapide
-
-```bash
-python cv_parser.py
-```
-
-> ⚠️ Modifier le chemin du PDF dans le bloc `__main__` avant de tester.
-
----
-
-## ⚠️ Points d'attention
-
-| Sujet | Détail |
-|---|---|
-| Temps d'exécution | ~5-15 sec par CV (appel API Gemini inclus) |
-| CV image | OCR forcé à 300 dpi pour une meilleure précision |
-| Quota API | Gemini 2.5 Flash a un quota gratuit limité |
-| Chemin Tesseract | Ligne à commenter sur Linux/Mac (Windows uniquement) |
-
----
-
-## 🔧 Configuration rapide
-
-Les constantes en haut du fichier permettent d'ajuster le comportement sans toucher à la logique :
-
-```python
-SEUIL_OCR    = 50                   # Seuil de détection image (caractères)
-DPI_OCR      = 300                  # Résolution OCR
-LANG_OCR     = 'fra+eng'            # Langues Tesseract
-MODEL_GEMINI = 'gemini-2.5-flash'   # Modèle LLM
-```
-
----
-
-## 👥 Contributeurs — Groupe 4
-
-Module conçu et développé dans le cadre du projet JOB_BOT — Master Data Science.
-
-- **Alpha Oumar DIALLO**
-- **Yaye Fatou GNINGUE**
-- **Antoine PACCHIONI**
-- **Rayhana BEN HIM**
