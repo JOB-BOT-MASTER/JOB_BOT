@@ -85,7 +85,7 @@ async def search_job(ctx, *, args: str = ""):
                     resultat = extraire_texte_cv(tmp_path)
                     os.remove(tmp_path)
                     if resultat["statut"] == "succes":
-                        cv_text = resultat["texte_cv"]
+                        cv_text = resultat["texte_CV"]
                         await ctx.send("CV extrait avec succes.")
                     else:
                         await ctx.send(f"Erreur extraction CV : {resultat['erreur']}")
