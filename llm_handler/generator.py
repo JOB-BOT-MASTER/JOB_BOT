@@ -26,7 +26,7 @@ class LetterGenerator:
         Le format de sortie doit être du code LaTeX valide (\documentclass{{article}}).
 
         STRUCTURE DE RÉDACTION :
-        1. Fait une en-tête classique d'une lettre de motivation (coordonné de l'expéditeur en haut à gauche et du receveur en bas à droite)
+        1. Dans l'en-tête, fais la version classique d'une lettre de motivation (coordonné de l'expéditeur en haut à gauche et du receveur en bas à droite), attention il faut bien que les deux coordonnées soit au dessus de la lettre de motivation 
         2. LE VOUS : Accroche originale montrant la connaissance de l'entreprise et de ses besoins.
         3. LE MOI : 2-3 réalisations concrètes issues du CV avec verbes d'action et résultats chiffrés.
         4. LE NOUS : Projection de la collaboration et résolution de leurs problématiques.
