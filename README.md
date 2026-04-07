@@ -86,7 +86,7 @@ GEMINI_API_KEY=votre_cle_gemini
 5. Lancer le bot :
 ```bash
 python bot.py
-
+```
 ## Utilisation
 
 Dans un salon Discord, envoyer la commande suivante avec le CV en PDF en pièce jointe :
