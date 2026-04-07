@@ -1,65 +1,89 @@
-# Job BOT Discord
+# JOB BOT - Bot Discord de recherche d'emploi
 
-Bot Discord pour faciliter la recherche d'emploi et d'alternance.
+Bot Discord permettant de rechercher des offres d'emploi et de générer des lettres de motivation personnalisées à partir d'un CV en PDF.
 
-## Fonctionnalites
-- Scraping automatique d'offres d'emploi
-- Extraction et analyse de CV (PDF)
-- Evaluation de la pertinence des offres d'emploi
-- Generation de lettres de motivation personnalisees
+## Fonctionnement global
+
+L'utilisateur envoie la commande `!search_job` sur Discord avec son CV en PDF en pièce jointe. Le bot effectue alors les étapes suivantes :
+
+1. Extraction et restructuration du texte du CV (Groupe 4)
+2. Scraping des offres d'emploi sur LinkedIn et Welcome to the Jungle (Groupes 2 et 3)
+3. Analyse sémantique pour trouver les offres les plus pertinentes (Groupe 5)
+4. Génération d'une lettre de motivation personnalisée en LaTeX pour chaque offre (Groupe 5)
+5. Envoi des résultats à l'utilisateur sur Discord (Groupe 1)
 
 ## Structure du projet
 
 ```
-bot-emploi-discord/
-├── bot.py                        ← Groupe 1
-├── requirements.txt
-├── .env                          ← NE PAS COMMITER
-├── env.example
-├── scraping/
-│   ├── scraper_site1.py          ← Groupe 2
-│   └── scraper_site2.py          ← Groupe 3
+JOB_BOT/
+├── bot.py                        # Point d'entrée principal (Groupe 1)
+├── requirements.txt              # Packages Python nécessaires
+├── .env                          # Variables secrètes (non commité)
+├── env.example                   # Template pour le .env
+├── scraper/
+│   ├── scraper_site1.py          # Scraping LinkedIn (Groupe 2)
+│   └── scraper_site2.py          # Scraping Welcome to the Jungle (Groupe 3)
 ├── cv_parser/
-│   └── pdf_parser.py             ← Groupe 4
-└── llm/
-    └── llm_handler.py            ← Groupe 5
+│   └── pdf_parser.py             # Extraction et restructuration du CV (Groupe 4)
+├── llm_handler/
+│   ├── embeddings.py             # Analyse sémantique (Groupe 5)
+│   ├── generator.py              # Génération de lettres de motivation (Groupe 5)
+│   └── config.py                 # Configuration du module LLM (Groupe 5)
+└── data/
+    └── offers.csv                # Fichier intermédiaire des offres scrapées
 ```
+
+## Groupes
+
+| Groupe | Rôle | Fichier(s) |
+|--------|------|------------|
+| Groupe 1 | Bot Discord et coordination | `bot.py` |
+| Groupe 2 | Scraping LinkedIn | `scraper/scraper_site1.py` |
+| Groupe 3 | Scraping Welcome to the Jungle | `scraper/scraper_site2.py` |
+| Groupe 4 | Extraction et restructuration du CV | `cv_parser/pdf_parser.py` |
+| Groupe 5 | Analyse sémantique et génération de lettres | `llm_handler/` |
 
 ## Installation
 
+### Prérequis
+
+- Python 3.11
+- Google Chrome installé
+- Tesseract OCR installé : https://github.com/UB-Mannheim/tesseract/wiki
+
+### Étapes
+
+1. Cloner le repo :
 ```bash
-# 1. Cloner le repo
-git clone https://github.com/VOTRE_COMPTE/bot-emploi-discord.git
-cd bot-emploi-discord
-
-# 2. Créer et activer l'environnement virtuel
-python -m venv venv
-venv\Scripts\activate      # Windows
-source venv/bin/activate   # Mac/Linux
-
-# 3. Installer les packages
-pip install -r requirements.txt
-
-# 4. Configurer le token Discord
-# Renommer env.example en .env et remplir DISCORD_TOKEN
+git clone https://github.com/JOB-BOT-MASTER/JOB_BOT.git
+cd JOB_BOT
 ```
 
-## Lancer le bot
+2. Créer et activer l'environnement virtuel :
+```bash
+# Windows
+python -m venv venv
+venv\Scripts\activate
 
+# Mac/Linux
+python -m venv venv
+source venv/bin/activate
+```
+
+3. Installer les packages :
+```bash
+pip install -r requirements.txt
+```
+
+4. Configurer les variables d'environnement :
+   - Copier `env.example` en `.env`
+   - Remplir les valeurs suivantes :
+```
+DISCORD_TOKEN=votre_token_discord
+GEMINI_API_KEY=votre_cle_gemini
+```
+
+5. Lancer le bot :
 ```bash
 python bot.py
 ```
-
-## Utilisation
-
-Dans Discord :
-```
-!search_job --type "Data Science" --loc Strasbourg
-```
-(avec votre CV en PDF en pièce jointe)
-
-## Regles GitHub
-- Ne jamais commiter `.env`
-- Ne jamais commiter `venv/`
-- Toujours faire `git pull` avant de commencer a coder
-- Mettre a jour `requirements.txt` quand vous ajoutez un package
