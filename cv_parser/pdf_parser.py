@@ -89,7 +89,7 @@ def extraire_texte_cv(chemin_pdf):
     except Exception as e:
         return {
             "statut": "erreur",
-            "texte_CV": "",
+            "texte_propre": "",
             "erreur": str(e)
         }
 
