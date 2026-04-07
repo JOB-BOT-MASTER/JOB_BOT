@@ -53,7 +53,7 @@ def extraire_texte_cv(chemin_pdf):
         if len(texte_brut.strip()) < 50:
             return {
                 "statut": "erreur", 
-                "texte_CV": "",
+                "texte_propre": "",
                 "erreur": "Le document est illisible ou vide, même après tentative de lecture OCR."
             }
 
@@ -82,7 +82,7 @@ def extraire_texte_cv(chemin_pdf):
         return {
             "statut": "succes",
             "texte_original": texte_brut,  # Gardé pour le débogage si besoin
-            "texte_CV": reponse.text,
+            "texte_propre": reponse.text,
             "erreur": None
         }
 
