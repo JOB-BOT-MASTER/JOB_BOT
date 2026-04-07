@@ -86,4 +86,42 @@ GEMINI_API_KEY=votre_cle_gemini
 5. Lancer le bot :
 ```bash
 python bot.py
+
+## Utilisation
+
+Dans un salon Discord, envoyer la commande suivante avec le CV en PDF en pièce jointe :
+
+```
+!search_job --type Data Science --loc Strasbourg
+```
+
+Le bot retournera pour chaque offre pertinente :
+- Le titre du poste, l'entreprise et la localisation
+- Un score de pertinence par rapport au CV
+- Un lien vers l'offre
+- Un fichier `.tex` contenant la lettre de motivation (à compiler sur Overleaf)
+
+### Autres commandes
+
+| Commande | Description |
+|----------|-------------|
+| `!aide` | Affiche l'aide du bot |
+| `!ping` | Vérifie que le bot est en ligne |
+
+## Ouvrir la lettre de motivation
+
+La lettre de motivation est générée au format LaTeX (fichier `.tex`). Pour l'ouvrir en PDF :
+
+1. Télécharger le fichier `.tex` envoyé par le bot
+2. Aller sur https://overleaf.com
+3. Créer un nouveau projet et coller le contenu du fichier
+4. Compiler pour obtenir le PDF final
+
+## Règles GitHub
+
+- Ne jamais commiter le fichier `.env`
+- Ne jamais commiter le dossier `venv/`
+- Toujours faire `git pull` avant de commencer à coder
+- Mettre à jour `requirements.txt` après avoir installé un nouveau package et prévenir les autres sur Discord
+
 ```
