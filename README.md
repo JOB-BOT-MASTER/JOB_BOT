@@ -5,7 +5,7 @@ Bot Discord pour faciliter la recherche d'emploi et d'alternance.
 ## Fonctionnalites
 - Scraping automatique d'offres d'emploi
 - Extraction et analyse de CV (PDF)
-- Evaluation de la pertinence des offres
+- Evaluation de la pertinence des offres d'emploi
 - Generation de lettres de motivation personnalisees
 
 ## Structure du projet
