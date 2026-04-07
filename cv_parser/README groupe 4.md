@@ -10,6 +10,9 @@
 
 Le Groupe 4, nous sommes responsable de l'extraction textuelle des CV soumis par les utilisateurs au format PDF. Le module prend en entrée un fichier PDF (quel que soit son mode de création) et retourne en sortie un texte restructuré par rubriques, directement exploitable par le module d'analyse du Groupe 5.
 
+<img width="1129" height="314" alt="image" src="https://github.com/user-attachments/assets/c06b15b9-63c8-4919-9b6e-99f4bda2d29b" />
+
+
 Le script produit une unique fonction importable, extraire_cv(chemin_pdf), conçue pour être appelée depuis le bot Discord du Groupe 1 sans dépendance au reste du code.
 
 ## 2. Problématique technique
@@ -199,3 +202,17 @@ groupe4/
 ├── README.md           # Cette documentation
 └── requirements.txt    # Dépendances Python
 ```
+## 10. Résumé de la pipeline globale
+
+Le module fonctionne en 3 étapes simples :
+
+**1. Extraction du texte**  
+D’abord, le CV au format PDF est lu avec PyMuPDF afin d’en extraire le texte. Si le document ne contient pas de texte exploitable (cas des CV scannés ou exportés en image), un fallback automatique vers Tesseract OCR est déclenché pour récupérer le contenu.
+
+**2. Regroupement du contenu**  
+Le texte obtenu est ensuite regroupé en un seul bloc. À ce stade, il reste souvent désorganisé à cause des colonnes ou de la mise en page du CV, mais il constitue une base complète sur laquelle travailler.
+
+**3. Restructuration du CV**  
+Enfin, ce texte brut est envoyé à l’API Gemini, dont le rôle est uniquement de le remettre en forme de manière logique (regroupement des rubriques, ordre de lecture cohérent), sans jamais modifier ni inventer d’informations.
+
+La fonction principale `extraire_texte_cv(chemin_pdf)` retourne alors un dictionnaire contenant le texte original, le texte restructuré, ainsi qu’un statut d’exécution. Ce résultat est directement utilisé par le Groupe 5 afin de générer une lettre de motivation pertinente, suite à l'analyse du texte restructuré.
