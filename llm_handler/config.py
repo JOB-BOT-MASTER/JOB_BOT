@@ -14,8 +14,6 @@ class EmbeddingConfig:
 class LLMConfig:
     def __init__(self):
         self.api_key = os.getenv("GEMINI_API_KEY")
-        # Utilisation de 'gemini-1.5-flash' sans prÃ©fixe,
-        # c'est le plus compatible avec le SDK 'google-genai'
         self.model_name = "gemini-1.5-flash"
         self.temperature = 0.7
 
